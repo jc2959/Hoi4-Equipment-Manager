@@ -1,11 +1,9 @@
 import os
-from json.decoder import JSONDecodeError
 from re import Match, sub as re_sub
-import re
 import json
 from typing import Callable, Dict, Type
 
-from hoi4_data.hoi4loadable import Hoi4Loadable
+from hoi4.data.hoi4loadable import Hoi4Loadable
 
 
 def convert_to_json(file_contents: str) -> Dict:
@@ -97,7 +95,7 @@ def load_all_data(path_to_hoi4_files: str, hoi4loadable_type: Type) -> Dict[str,
     types_parent_dir = hoi4loadable_type.__name__.lower().replace("_", "\\")
 
     data_instance: Hoi4Loadable = hoi4loadable_type({})
-    header = data_instance.header
+    headers = data_instance.allowed_headers
 
     last_dir = types_parent_dir.split("\\")[-1]
 
@@ -119,10 +117,11 @@ def load_all_data(path_to_hoi4_files: str, hoi4loadable_type: Type) -> Dict[str,
         if len(json_obj) == 0:
             continue
 
-        if header not in json_obj.keys() or not isinstance(json_obj[header], dict):
-            continue
+        for header in json_obj.keys():
+            if header not in headers or not isinstance(json_obj[header], dict):
+                continue
 
-        for key, value in json_obj[header].items():
-            return_data[key] = hoi4loadable_type(value)
+            for key, value in json_obj[header].items():
+                return_data[key] = hoi4loadable_type(key, value)
 
     return return_data

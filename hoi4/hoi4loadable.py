@@ -1,16 +1,22 @@
+"""
+The primary Hoi4 data types
+"""
+
 from typing import Dict, Type, List, Tuple, Union
-import inspect
 
-from hoi4 import hoi4interface
+import hoi4interface
 
 
-class Hoi4Data(object):
+class Hoi4Data:
     """
     Decorator for Hoi4Loadables so that they can be injected
     with relevant info if needed
     """
-    def __init__(self, arg={}):
+    def __init__(self, arg=None):
         # Allows decorator to be initialised without arguments
+
+        if arg is None:
+            arg = {}
 
         self._allowed_headers = arg["headers"] if "headers" in arg.keys() else []
         """ The header for its JSON file """
@@ -24,15 +30,15 @@ class Hoi4Data(object):
         """ The relationships the data has, indexed by its field name """
 
     def __call__(self, *args, **kwargs):
-        self._arg: Hoi4Loadable = args[0]
+        _arg: Hoi4Loadable = args[0]
 
-        self._arg.allowed_headers = self._allowed_headers
-        self._arg.child_types = self._child_types
-        self._arg.subtypes = self._subtypes
-        self._arg.is_loadable = self._is_loadable
-        self._arg.relationships = self._relationships
+        _arg.allowed_headers = self._allowed_headers
+        _arg.child_types = self._child_types
+        _arg.subtypes = self._subtypes
+        _arg.is_loadable = self._is_loadable
+        _arg.relationships = self._relationships
 
-        return self._arg
+        return _arg
 
 
 @Hoi4Data()
@@ -69,8 +75,10 @@ class Hoi4Loadable:
         for property_name, _ in vars(self).items():
             if property_name in self.relationships.keys():
                 if property_name in json_obj.keys():
-                    setattr(self, property_name, Hoi4Relationship(self, property_name, json_obj[property_name]))
-            elif property_name not in vars(Hoi4Loadable()).keys() and property_name in json_obj.keys():
+                    setattr(self, property_name,
+                            Hoi4Relationship(self, property_name, json_obj[property_name]))
+            elif property_name not in vars(Hoi4Loadable).keys() \
+                    and property_name in json_obj.keys():
                 property_value = json_obj[property_name]
 
                 # If the Json value is a dict (possible nested Json) then
@@ -79,12 +87,15 @@ class Hoi4Loadable:
                 if isinstance(property_value, dict):
                     for child_value in self.child_types:
                         if property_name in child_value.subtypes:
-                            property_value = child_value(property_value)
+                            property_value = child_value(json_obj=property_value)
 
                 setattr(self, property_name, property_value)
 
 
 class Hoi4Relationship:
+    """
+    A one-to-many relationship for Hoi4 Objects
+    """
     def __init__(self, entity_from: Hoi4Loadable, field: str, loading_data: Union[Dict, str]):
         self.members: List[Tuple[Hoi4Loadable, int]] = []
 
@@ -103,6 +114,11 @@ class Hoi4Relationship:
         hoi4interface.queue_relationship(self)
 
     def establish_relationship(self, data: Dict[str, Hoi4Loadable]):
+        """
+        Establishes a relationship between the 'from-entity' and another
+
+        :param data The data for the 'to-entity'
+        """
         for key, value in self.json_obj.items():
             hoi4_obj = data[key]
             self.entities_to.append(hoi4_obj)

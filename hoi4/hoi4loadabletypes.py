@@ -1,4 +1,6 @@
-from hoi4.data.hoi4loadable import Hoi4Data, Hoi4Loadable, Hoi4Relationship
+from typing import Optional
+
+from hoi4.hoi4loadable import Hoi4Data, Hoi4Loadable, Hoi4Relationship
 
 
 @Hoi4Data({
@@ -73,6 +75,6 @@ class Units(Hoi4Loadable):
         self.max_organisation = 0
         self.default_morale = 0
         self.manpower = 0
-        self.need: Hoi4Relationship = None
-        self.need_equipment: Hoi4Relationship = None
+        self.need: Optional[Hoi4Relationship] = None
+        self.need_equipment: Optional[Hoi4Relationship] = None
         Hoi4Loadable.__init__(self, name, json_obj)

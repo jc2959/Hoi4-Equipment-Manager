@@ -1,9 +1,14 @@
+"""
+Interface for the Hoi4 objects
+"""
+
 import inspect
 from queue import Queue
 from typing import Type, Dict, List
 
-from hoi4.data import data_loader, hoi4loadabletypes
-from hoi4.data.hoi4loadable import Hoi4Loadable, Hoi4Relationship
+import data_loader
+import hoi4loadabletypes
+from hoi4loadable import Hoi4Loadable, Hoi4Relationship
 
 
 _hoi4_data: Dict[Type[Hoi4Loadable], Dict[str, Hoi4Loadable]] = {}
@@ -135,7 +140,7 @@ def _add_relationship_entity_to_dict(hoi4_obj: Hoi4Loadable, field: str, index: 
     :param field: The field the relationship acts on
     :param index: The index of the relationship within the relationship list
     """
-    if hoi4_obj not in _relationship_dict.keys():
+    if hoi4_obj not in _relationship_dict:
         _relationship_dict[hoi4_obj] = {}
 
     if field not in _relationship_dict[hoi4_obj].keys():
@@ -144,9 +149,10 @@ def _add_relationship_entity_to_dict(hoi4_obj: Hoi4Loadable, field: str, index: 
     _relationship_dict[hoi4_obj][field].append(index)
 
 
-def get_relationships_from_field_child(hoi4_obj: Hoi4Loadable, field: str) -> List[Hoi4Relationship]:
+def get_relationships_from_field_child(hoi4_obj: Hoi4Loadable, field: str) \
+        -> List[Hoi4Relationship]:
     """
-    Retrieves all of the relationships the Hoi4Loadable is a child of, that acts on a certain field
+    Retrieves the relationships the Hoi4Loadable is a child of, that acts on a certain field
 
     :param hoi4_obj: The child Hoi4Loadable
     :param field: The field the relationship acts on
@@ -156,15 +162,16 @@ def get_relationships_from_field_child(hoi4_obj: Hoi4Loadable, field: str) -> Li
     """
     relationship_indices = _relationship_dict[hoi4_obj][field]
 
-    relationships = []
+    relationships: List[Hoi4Relationship] = []
 
     for relationship_index in relationship_indices:
         relationship = _relationship_list[relationship_index]
 
         if hoi4_obj in relationship.entities_to:
-            relationships.append(hoi4_obj)
+            relationships.append(_relationship_list[relationship_index])
 
     if len(relationships) == 0:
-        raise KeyError(f"There is no relationship on the field {field} in which {hoi4_obj.name} is a child")
+        raise KeyError(f"There is no relationship on the field {field} "
+                       f"in which {hoi4_obj.name} is a child")
 
     return relationships

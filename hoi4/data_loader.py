@@ -1,9 +1,13 @@
+"""
+Loads the Hoi4Loadables from files
+"""
+
 import os
 from re import Match, sub as re_sub
 import json
 from typing import Callable, Dict, Type
 
-from hoi4.data.hoi4loadable import Hoi4Loadable
+from hoi4loadable import Hoi4Loadable
 
 
 def convert_to_json(file_contents: str) -> Dict:
@@ -44,13 +48,16 @@ def apply_json_regex(hoi4_formatted_str: str) -> str:
 
     # Replacement functions
     remove_rep_func: Callable[[Match], str] = lambda match: ""
-    exist_quotemarks_rep_func: Callable[[Match], str] = lambda match: match.group(1).replace(" ", "¬")
+    exist_quotemarks_rep_func: Callable[[Match], str] = lambda match: \
+        match.group(1).replace(" ", "¬")
     just_group_rep_func: Callable[[Match], str] = lambda match: match.group(1)
     attr_rep_func: Callable[[Match], str] = lambda match: \
         match.group().replace(match.group(1), "\"" + match.group(1).strip() + "\"")
     newline_rep_func: Callable[[Match], str] = lambda match: match.group().replace("\n", ",")
-    lists_rep_func: Callable[[Match], str] = lambda match: match.group().replace("{", "[ ").replace("}", " ]")
-    list_elements_rep_func: Callable[[Match], str] = lambda match: match.group().replace("\" ", "\",")
+    lists_rep_func: Callable[[Match], str] = lambda match: \
+        match.group().replace("{", "[ ").replace("}", " ]")
+    list_elements_rep_func: Callable[[Match], str] = lambda match: \
+        match.group().replace("\" ", "\",")
     lst_element_rep_func: Callable[[Match], str] = lambda match: match.group().replace(",", "")
     boolean_rep_func: Callable[[Match], str] = lambda match: \
         match.group().replace(match.group(1), "true" if match.group(1) == "\"yes\"" else "false")
@@ -64,12 +71,14 @@ def apply_json_regex(hoi4_formatted_str: str) -> str:
     # Applies the replacement functions where the regex patterns are found
     new_file_contents = re_sub(comments_regex_pattern, remove_rep_func, new_file_contents)
     new_file_contents = re_sub(bad_characters_regex_pattern, remove_rep_func, new_file_contents)
-    new_file_contents = re_sub(exist_quotemarks_regex_pattern, exist_quotemarks_rep_func, new_file_contents)
+    new_file_contents = re_sub(exist_quotemarks_regex_pattern,
+                               exist_quotemarks_rep_func, new_file_contents)
     new_file_contents = re_sub(attribute_regex_pattern, attr_rep_func, new_file_contents)
     new_file_contents = re_sub(boolean_regex_pattern, boolean_rep_func, new_file_contents)
     new_file_contents = re_sub(newline_regex_pattern, newline_rep_func, new_file_contents)
     new_file_contents = re_sub(lists_regex_pattern, lists_rep_func, new_file_contents)
-    new_file_contents = re_sub(list_elements_regex_pattern, list_elements_rep_func, new_file_contents)
+    new_file_contents = re_sub(list_elements_regex_pattern,
+                               list_elements_rep_func, new_file_contents)
     new_file_contents = re_sub(lst_element_regex_pattern, lst_element_rep_func, new_file_contents)
     new_file_contents = re_sub(bad_commas_regex_pattern, lst_element_rep_func, new_file_contents)
     new_file_contents = re_sub(trailing_zeros_regex_pattern, just_group_rep_func, new_file_contents)
@@ -87,8 +96,8 @@ def load_all_data(path_to_hoi4_files: str, hoi4loadable_type: Type) -> Dict[str,
     """
     Loads all of the Hoi4 Loadables of a certain type
 
-    :param path_to_hoi4_files: The path to the Hoi4 files
-                                (of the format "steam\\steamapps\\common\\Hearts of Iron IV\\common")
+    :param path_to_hoi4_files: The path to the Hoi4 files (of the format
+                                "steam\\steamapps\\common\\Hearts of Iron IV\\common")
     :param hoi4loadable_type: The type of Hoi4 Loadables to load
     :return: A dictionary of the Hoi4 Loadables indexed by name
     """
@@ -101,7 +110,7 @@ def load_all_data(path_to_hoi4_files: str, hoi4loadable_type: Type) -> Dict[str,
 
     all_paths = []
 
-    for roots, dirs, files in os.walk(path_to_hoi4_files):
+    for roots, _, files in os.walk(path_to_hoi4_files):
         if roots.split("\\")[-1] == last_dir:
             if types_parent_dir in roots:
                 all_paths.extend([f"{roots}\\{name}" for name in files if ".txt" in name])
@@ -110,7 +119,7 @@ def load_all_data(path_to_hoi4_files: str, hoi4loadable_type: Type) -> Dict[str,
     return_data: Dict[str, Hoi4Loadable] = {}
 
     for real_path in all_paths:
-        file_content = "\n".join(open(real_path, 'r').readlines())
+        file_content = "\n".join(open(real_path, 'r', encoding='UTF-8').readlines())
 
         json_obj = convert_to_json(file_content)
 

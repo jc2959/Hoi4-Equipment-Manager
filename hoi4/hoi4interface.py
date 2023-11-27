@@ -6,9 +6,9 @@ import inspect
 from queue import Queue
 from typing import Type, Dict, List
 
-import data_loader
-import hoi4loadabletypes
-from hoi4loadable import Hoi4Loadable, Hoi4Relationship
+from . import data_loader
+from . import hoi4loadabletypes
+from .hoi4loadable import Hoi4Loadable, Hoi4Relationship
 
 
 _hoi4_data: Dict[Type[Hoi4Loadable], Dict[str, Hoi4Loadable]] = {}

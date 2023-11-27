@@ -7,7 +7,7 @@ from re import Match, sub as re_sub
 import json
 from typing import Callable, Dict, Type
 
-from hoi4loadable import Hoi4Loadable
+from .hoi4loadable import Hoi4Loadable
 
 
 def convert_to_json(file_contents: str) -> Dict:

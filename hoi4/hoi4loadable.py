@@ -4,7 +4,7 @@ The primary Hoi4 data types
 
 from typing import Dict, Type, List, Tuple, Union
 
-import hoi4interface
+from . import hoi4interface
 
 
 class Hoi4Data:

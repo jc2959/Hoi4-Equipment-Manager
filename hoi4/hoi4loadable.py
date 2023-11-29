@@ -1,10 +1,8 @@
 """
 The primary Hoi4 data types
 """
-
-from typing import Dict, Type, List, Tuple, Union
-
-from . import hoi4interface
+import typing
+from typing import Dict, Type, List, Tuple, Union, Any
 
 
 class Hoi4Data:
@@ -58,10 +56,18 @@ class Hoi4Loadable:
         self.is_loadable: bool = self.is_loadable
         """ The whether the obj can be loaded from a file """
         self.relationships: Dict[str, Type[Hoi4Loadable]] = self.relationships
-
         self.name = name
 
         self.load_details(json_obj)
+
+    def get_all_relationships(self) -> List:
+        relationships = []
+
+        for property_name, _ in self.get_unique_attribute_types().items():
+            if property_name in self.relationships.keys():
+                relationships.append(getattr(self, property_name))
+
+        return relationships
 
     def load_details(self, json_obj: Dict):
         """ Loads the fields of the Hoi4 Loadable from a Json object """
@@ -72,13 +78,13 @@ class Hoi4Loadable:
         # Iterates through each field of the object and if there is a
         # corresponding key in the Json object, it then sets the field
         # to the corresponding value
-        for property_name, _ in vars(self).items():
+        for property_name, _ in self.get_unique_attribute_types().items():
             if property_name in self.relationships.keys():
                 if property_name in json_obj.keys():
-                    setattr(self, property_name,
-                            Hoi4Relationship(self, property_name, json_obj[property_name]))
-            elif property_name not in vars(Hoi4Loadable).keys() \
-                    and property_name in json_obj.keys():
+                    attr: Hoi4Relationship = getattr(self, property_name)
+
+                    attr.set_loading_data(json_obj[property_name])
+            elif property_name in json_obj.keys():
                 property_value = json_obj[property_name]
 
                 # If the Json value is a dict (possible nested Json) then
@@ -91,12 +97,38 @@ class Hoi4Loadable:
 
                 setattr(self, property_name, property_value)
 
+    def get_unique_attribute_types(self) -> dict[str, Type[Any]]:
+        unique_vars = {}
+
+        try:
+            this_vars = typing.get_type_hints(self)
+            super_vars = vars(Hoi4Loadable)
+
+
+            for key, value in this_vars.items():
+                if key not in super_vars:
+                    unique_vars[key] = value
+        except TypeError as e:
+            print(e)
+
+        return unique_vars
+
+    def get_unique_attribute_values(self) -> dict[str, Any]:
+        unique_attributes = self.get_unique_attribute_types()
+
+        unique_attribute_values = {}
+
+        for key, value in unique_attributes.items():
+            unique_attribute_values[key] = getattr(self, key)
+
+        return unique_attribute_values
+
 
 class Hoi4Relationship:
     """
     A one-to-many relationship for Hoi4 Objects
     """
-    def __init__(self, entity_from: Hoi4Loadable, field: str, loading_data: Union[Dict, str]):
+    def __init__(self, entity_from: Hoi4Loadable, field: str):
         self.members: List[Tuple[Hoi4Loadable, int]] = []
 
         self.field = field
@@ -106,18 +138,19 @@ class Hoi4Relationship:
 
         self.data_type: Type[Hoi4Loadable] = entity_from.relationships[field]
 
-        if isinstance(loading_data, dict):
-            self.json_obj: Dict[str, int] = loading_data
-        else:
-            self.json_obj: Dict[str, int] = {loading_data: 0}
+        self.json_obj: Dict[str, int] = {}
 
-        hoi4interface.queue_relationship(self)
+    def set_loading_data(self, loading_data: Union[Dict, str]):
+        if isinstance(loading_data, dict):
+            self.json_obj = loading_data
+        else:
+            self.json_obj = {loading_data: 0}
 
     def establish_relationship(self, data: Dict[str, Hoi4Loadable]):
         """
         Establishes a relationship between the 'from-entity' and another
 
-        :param data The data for the 'to-entity'
+        :param data: The data for the 'to-entity'
         """
         for key, value in self.json_obj.items():
             hoi4_obj = data[key]

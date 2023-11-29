@@ -7,52 +7,68 @@ from hoi4.hoi4loadable import Hoi4Data, Hoi4Loadable, Hoi4Relationship
     "subtypes": ["forest", "jungle"]
 })
 class Environment(Hoi4Loadable):
-    def __init__(self,  json_obj: dict = None):
-        self.attack = 0
-        self.movement = 0
+    attack: float = 0
+    movement: float = 0
+
+    def __init__(self, json_obj: dict = None):
         Hoi4Loadable.__init__(self, "", json_obj)
+
+
+@Hoi4Data({
+    "headers": ["resources"],
+    "is loadable": True
+})
+class Resources(Hoi4Loadable):
+    def __init__(self, name: str = "", json_obj: dict = None):
+        Hoi4Loadable.__init__(self, name=name, json_obj=json_obj)
 
 
 @Hoi4Data({
     "headers": ["equipments", "duplicate_archetypes"],
     "is loadable": True,
+    "relationships": {
+        "resources": Resources
+    }
 })
 class Units_Equipment(Hoi4Loadable):
+    year: int = 1918
+
+    archetype: Hoi4Relationship = None
+
+    is_archetype: bool = False
+    is_buildable: bool = False
+
+    type: str = ""
+
+    active: bool = False
+
+    # Misc Abilities
+    reliability: float = 0.9
+    maximum_speed: float = 4
+
+    # Defensive Abilities
+    defense: float = 20
+    breakthrough: float = 2
+    hardness: float = 0
+    armor_value: float = 0
+
+    # Offensive Abilities
+    soft_attack: float = 3
+    hard_attack: float = 0.5
+    ap_attack: float = 1
+    air_attack: float = 0
+
+    # Space taken in convoy
+    lend_lease_cost: float = 1
+
+    build_cost_ic: float = 0.43
+    resources: Hoi4Relationship = None
+
     def __init__(self, name: str = "", json_obj: dict = None):
         self.relationships["archetype"] = Units_Equipment
 
-        self.year = 1918
-
-        self.archetype: Hoi4Relationship = None
-
-        self.is_archetype = False
-        self.is_buildable = False
-
-        self.type = ""
-
-        self.active = False
-
-        # Misc Abilities
-        self.reliability = 0.9
-        self.maximum_speed = 4
-
-        # Defensive Abilities
-        self.defense = 20
-        self.breakthrough = 2
-        self.hardness = 0
-        self.armor_value = 0
-
-        # Offensive Abilities
-        self.soft_attack = 3
-        self.hard_attack = 0.5
-        self.ap_attack = 1
-        self.air_attack = 0
-
-        # Space taken in convoy
-        self.lend_lease_cost = 1
-
-        self.build_cost_ic = 0.43
-        self.resources = {}
+        self.archetype = Hoi4Relationship(self, "archetype")
+        self.resources = Hoi4Relationship(self, "resources")
 
         Hoi4Loadable.__init__(self, name, json_obj)
 
@@ -67,14 +83,18 @@ class Units_Equipment(Hoi4Loadable):
     }
 })
 class Units(Hoi4Loadable):
+    abbreviation: str = ""
+    forest: Environment = Environment()
+    jungle: Environment = Environment()
+    max_strength: float = 0
+    max_organisation: float = 0
+    default_morale: float = 0
+    manpower: float = 0
+    need: Hoi4Relationship = None
+    need_equipment: Hoi4Relationship = None
+
     def __init__(self, name: str = "", json_obj: dict = None):
-        self.abbreviation = ""
-        self.forest = Environment()
-        self.jungle = Environment()
-        self.max_strength = 0
-        self.max_organisation = 0
-        self.default_morale = 0
-        self.manpower = 0
-        self.need: Optional[Hoi4Relationship] = None
-        self.need_equipment: Optional[Hoi4Relationship] = None
+        self.need = Hoi4Relationship(self, "need")
+        self.need_equipment = Hoi4Relationship(self, "need_equipment")
+
         Hoi4Loadable.__init__(self, name, json_obj)

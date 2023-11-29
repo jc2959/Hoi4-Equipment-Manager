@@ -4,7 +4,7 @@ Interface for the Hoi4 objects
 
 import inspect
 from queue import Queue
-from typing import Type, Dict, List
+from typing import Type, Dict, List, Tuple, Any
 
 from . import data_loader
 from . import hoi4loadabletypes
@@ -42,7 +42,7 @@ are loaded
 
 def load_all(path_to_hoi4_data: str):
     """
-    Loads all of the Hoi4 data from the hoi4 files that can be loaded into
+    Loads the Hoi4 data from the hoi4 files that can be loaded into
     Hoi4Loadables defined in hoi4.data.hoi4loadabletypes
 
     :param path_to_hoi4_data: The path to the Hoi4 data files (of the format
@@ -50,21 +50,34 @@ def load_all(path_to_hoi4_data: str):
     """
     # Iterates through each class in hoi4.data.hoi4loadabletypes that is a subclass of
     # Hoi4Loadables, to load the respective files into the system
-    for name, obj in inspect.getmembers(hoi4loadabletypes):
+    for name, obj in get_all_hoi4_types():
         if inspect.isclass(obj) and name != "Hoi4Loadable" and issubclass(obj, Hoi4Loadable):
             loadable: Hoi4Loadable = obj()
 
             if loadable.is_loadable:
                 _hoi4_data[obj] = data_loader.load_all_data(path_to_hoi4_data, obj)
 
-    # Loads all of the queued data
+                for _, value in _hoi4_data[obj].items():
+                    for relationship in value.get_all_relationships():
+                        if relationship is not None:
+                            queue_relationship(relationship)
+
+    # Loads the queued data
     add_queued_hoi4_data()
     establish_relationships()
 
 
+def get_all_hoi4_types() -> List[Tuple[str, Type]]:
+    """
+    :return: A list of hoi4 type members in the format (name, type)
+    """
+    return [x for x in inspect.getmembers(hoi4loadabletypes)
+            if inspect.isclass(x[1]) and x[0] != "Hoi4Loadable" and issubclass(x[1], Hoi4Loadable)]
+
+
 def add_queued_hoi4_data():
     """
-    Loads all of the queued data into the Hoi4 data dictionary
+    Loads all the queued data into the Hoi4 data dictionary
     """
     while not _hoi4_data_queue.empty():
         data_type, name, data = _hoi4_data_queue.get()
@@ -117,7 +130,7 @@ def queue_relationship(relationship: Hoi4Relationship):
 
 def establish_relationships():
     """
-    Loads all of the relationships in the relationship queue
+    Loads the relationships in the relationship queue
     """
     while not _relationship_queue.empty():
         relationship: Hoi4Relationship = _relationship_queue.get()

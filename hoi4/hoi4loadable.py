@@ -1,7 +1,9 @@
 """
 The primary Hoi4 data types
 """
+import logging
 import typing
+from enum import Enum
 from typing import Dict, Type, List, Tuple, Union, Any
 
 
@@ -104,12 +106,11 @@ class Hoi4Loadable:
             this_vars = typing.get_type_hints(self)
             super_vars = vars(Hoi4Loadable)
 
-
             for key, value in this_vars.items():
                 if key not in super_vars:
                     unique_vars[key] = value
-        except TypeError as e:
-            print(e)
+        except TypeError as error:
+            logging.root.warning(error)
 
         return unique_vars
 
@@ -124,12 +125,20 @@ class Hoi4Loadable:
         return unique_attribute_values
 
 
+class Hoi4RelationshipType(Enum):
+    ONE_TO_MANY = 0
+    MANY_TO_MANY = 1
+
+
 class Hoi4Relationship:
     """
     A one-to-many relationship for Hoi4 Objects
     """
-    def __init__(self, entity_from: Hoi4Loadable, field: str):
+    def __init__(self, relationship_type: Hoi4RelationshipType,
+                 entity_from: Hoi4Loadable, field: str):
         self.members: List[Tuple[Hoi4Loadable, int]] = []
+
+        self.relationship_type: Hoi4RelationshipType = relationship_type
 
         self.field = field
 
@@ -152,6 +161,9 @@ class Hoi4Relationship:
 
         :param data: The data for the 'to-entity'
         """
+        if self.relationship_type == Hoi4RelationshipType.ONE_TO_MANY:
+            assert len(self.json_obj) <= 1
+
         for key, value in self.json_obj.items():
             hoi4_obj = data[key]
             self.entities_to.append(hoi4_obj)

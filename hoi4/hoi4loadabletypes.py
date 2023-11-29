@@ -1,6 +1,6 @@
 from typing import Optional
 
-from hoi4.hoi4loadable import Hoi4Data, Hoi4Loadable, Hoi4Relationship
+from hoi4.hoi4loadable import Hoi4Data, Hoi4Loadable, Hoi4Relationship, Hoi4RelationshipType
 
 
 @Hoi4Data({
@@ -67,8 +67,8 @@ class Units_Equipment(Hoi4Loadable):
     def __init__(self, name: str = "", json_obj: dict = None):
         self.relationships["archetype"] = Units_Equipment
 
-        self.archetype = Hoi4Relationship(self, "archetype")
-        self.resources = Hoi4Relationship(self, "resources")
+        self.archetype = Hoi4Relationship(Hoi4RelationshipType.ONE_TO_MANY, self, "archetype")
+        self.resources = Hoi4Relationship(Hoi4RelationshipType.MANY_TO_MANY, self, "resources")
 
         Hoi4Loadable.__init__(self, name, json_obj)
 
@@ -94,7 +94,7 @@ class Units(Hoi4Loadable):
     need_equipment: Hoi4Relationship = None
 
     def __init__(self, name: str = "", json_obj: dict = None):
-        self.need = Hoi4Relationship(self, "need")
-        self.need_equipment = Hoi4Relationship(self, "need_equipment")
+        self.need = Hoi4Relationship(Hoi4RelationshipType.MANY_TO_MANY, self, "need")
+        self.need_equipment = Hoi4Relationship(Hoi4RelationshipType.ONE_TO_MANY, self, "need_equipment")
 
         Hoi4Loadable.__init__(self, name, json_obj)
